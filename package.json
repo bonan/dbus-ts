@@ -1,6 +1,6 @@
 {
   "name": "dbus-ts",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "Re-implementation of dbus-native in typescript using promises",
   "main": "lib/index.js",
   "scripts": {
@@ -14,11 +14,6 @@
   "author": {
     "name": "bonan",
     "url": "https://github.com/bonan"
-  },
-  "exports": {
-    ".": {
-      "import": "./index.js"
-    }
   },
   "types": "lib/index.d.ts",
   "contributors": [],

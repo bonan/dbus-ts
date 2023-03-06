@@ -125,11 +125,10 @@ export class DBusInterface
             signature: 'ss',
             body: [this.$name, propName]
         });
-        let signature = val[0][0];
-        if (signature.length === 1) {
-            return val[0][1][0];
+        if (Array.isArray(val) && val.length == 1) {
+            return val[0];
         }
-        return val[0][1];
+        return val;
     }
 
     private async $writeProp(propName, val): Promise<void> {
