@@ -45,6 +45,13 @@ run().catch(err => console.log(err))
 ```
 
 
+Type hints
+------
+
 Check out [npmjs/@dbus-types](https://www.npmjs.com/org/dbus-types) for all available type definitions
 
-![type hints](typehint.png)
+Type hints in action:
+
+![type hints](https://github.com/bonan/dbus-ts/raw/main/typehint.png)
+
+
