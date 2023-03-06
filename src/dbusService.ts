@@ -4,7 +4,7 @@ import {Interfaces} from "@dbus-types/dbus";
 import {DBusInterface} from "./dbusInterface";
 
 export class DBusService<K extends {[name: string]: any} = {}> {
-    constructor(public name: string, public bus: MessageBus) {
+    constructor(public name: string, public bus: MessageBus<K>) {
 
     }
 

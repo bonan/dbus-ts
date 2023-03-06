@@ -1,6 +1,6 @@
 {
   "name": "dbus-ts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Re-implementation of dbus-native in typescript using promises",
   "main": "lib/index.js",
   "scripts": {
@@ -25,9 +25,6 @@
   "license": "MIT",
   "dependencies": {
     "@dbus-types/dbus": "^0.0.4",
-    "@dbus-types/networkmanager": "^0.0.5",
-    "@dbus-types/notifications": "^0.0.5",
-    "@dbus-types/systemd": "^0.0.5",
     "@homebridge/long": "^5.2.1",
     "@homebridge/put": "^0.0.8",
     "xml2js": "^0.4.23"

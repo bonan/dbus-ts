@@ -9,7 +9,7 @@ export class DBusObject<K extends {[name: string]: any} = {}> {
     private _proxy: { [inf: string]: DBusInterface };
     private _nodes: string[];
 
-    constructor(public name, public service: DBusService) {}
+    constructor(public name, public service: DBusService<K>) {}
 
     async introspect(): Promise<this> {
         [this.name, this._proxy, this._nodes] = await introspectBus(this)
