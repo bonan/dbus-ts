@@ -20,56 +20,6 @@ export interface Type {
 
 export declare type ObjectPath = string;
 
-export function nativeType(t: Type|string, input: boolean = false) {
-  if (typeof t === 'string') {
-    return parseSignature(t).map(v => nativeType(v, input)).join(', ')
-  }
-
-  switch (t.type) {
-    case 'b': // boolean
-      return 'boolean';
-    case 'y': // int8
-    case 'n': // sint16
-    case 'q': // int16
-    case 'u': // int32
-    case 'i': // sint32
-    case 'x': // signed long
-    case 't': // unsigned long
-    case 'd': // double
-      return 'number';
-    case 'g': // string
-    case 's':
-      return 'string';
-    case 'o':
-      return 'ObjectPath';
-    case 'h':
-      return 'any'
-    case 'v':
-      if (input) {
-        return '[/*signature*/string,any]';
-      }
-      return '[Type[],any[]]';
-    case 'a':
-      if (t.child && t.child.length == 1) {
-        if (t.child[0].type == 'y') {
-          return `Buffer`;
-        }
-        /*if (['{', '('].indexOf(t.child[0].type) >= 0) {
-          return `${nativeType(t.child[0])}`
-        }*/
-        return `${nativeType(t.child[0], input)}[]`
-      }
-      break;
-    case '(':
-      return `[${t.child.map(c => nativeType(c, input)).join(',')}]`
-    case '{':
-      return `[${t.child.map(c => nativeType(c, input)).join(',')}]`
-
-  }
-  console.log(`Unhandled type`, t);
-  return 'any';
-}
-
 export function parseSignature(signature): Type[] {
   let index = 0;
   function next(): Types {
@@ -115,8 +65,8 @@ export function parseSignature(signature): Type[] {
 }
 
 const fromTree = function(tree) {
-  var res = '';
-  for (var i = 0; i < tree.length; ++i) {
+  let res = '';
+  for (let i = 0; i < tree.length; ++i) {
     if (tree[i].child.length === 0) {
       res += tree[i].type;
     } else {

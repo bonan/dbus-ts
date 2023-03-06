@@ -3,13 +3,14 @@ import {parseSignature} from './signature';
 
 export class DBusBuffer {
 
-    private options: {ayBuffer: boolean, ReturnLongjs: boolean}
+    private options: {ayBuffer: boolean, ReturnLongjs: boolean, simple: boolean}
     private pos: number = 0;
 
-    constructor(private buffer: Buffer, private startPos: number = 0, options?: {ayBuffer?: boolean, ReturnLongjs?: boolean}) {
+    constructor(private buffer: Buffer, private startPos: number = 0, options?: {ayBuffer?: boolean, ReturnLongjs?: boolean, simple?: boolean}) {
         this.options = {
             ayBuffer: true,
             ReturnLongjs: false,
+            simple: true,
             ...(typeof options !== 'object' ? {} : options)
         };
     }
@@ -80,7 +81,7 @@ export class DBusBuffer {
             case 'a':
                 if (!tree.child || tree.child.length !== 1)
                     throw new Error('Incorrect array element signature');
-                var arrayBlobLength = this.readInt32();
+                let arrayBlobLength = this.readInt32();
                 return this.readArray(tree.child[0], arrayBlobLength);
             case 'v':
                 return this.readVariant();
@@ -97,12 +98,18 @@ export class DBusBuffer {
     readVariant() {
         const signature = this.readSimpleType('g');
         const tree = parseSignature(signature);
+        if (this.options.simple) {
+            if (tree.length == 1) {
+                return this.readTree(tree[0])
+            }
+            return this.readStruct(tree);
+        }
         return [tree, this.readStruct(tree)];
     };
 
     readStruct(struct) {
         const result = [];
-        for (var i = 0; i < struct.length; ++i) {
+        for (let i = 0; i < struct.length; ++i) {
             result.push(this.readTree(struct[i]));
         }
         return result;
@@ -125,7 +132,19 @@ export class DBusBuffer {
             this.align(3);
         const end = this.pos + arrayBlobSize;
         result = [];
-        while (this.pos < end) result.push(this.readTree(eleType));
+        let obj = false;
+        if (this.options.simple && eleType.type === '{') {
+            result = {}
+            obj = true;
+        }
+        while (this.pos < end) {
+            if (!obj) {
+                result.push(this.readTree(eleType));
+                continue;
+            }
+            let res = this.readTree(eleType);
+            result[res[0]] = res[1];
+        }
         return result;
     };
 

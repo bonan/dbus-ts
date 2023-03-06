@@ -27,7 +27,7 @@ interface Put {
 
 export function marshall(signature, data, offset?) {
   if (typeof offset === 'undefined') offset = 0;
-  var tree = parseSignature(signature);
+  let tree = parseSignature(signature);
   if (!Array.isArray(data) || data.length !== tree.length) {
     throw new Error(
         `message body does not match message signature. Body:${JSON.stringify(
@@ -35,17 +35,17 @@ export function marshall(signature, data, offset?) {
         )}, signature:${signature}`
     );
   }
-  var putstream: Put = put();
+  let putstream: Put = put();
   putstream._offset = offset;
-  var buf = writeStruct(putstream, tree, data).buffer();
+  let buf = writeStruct(putstream, tree, data).buffer();
   return buf;
 };
 
 function align(ps: Put, n: number) {
-  var pad = n - ps._offset % n;
+  let pad = n - ps._offset % n;
   if (pad === 0 || pad === n) return;
   // TODO: write8(0) in a loop (3 to 7 times here) could be more efficient
-  var padBuff = Buffer.alloc(pad);
+  let padBuff = Buffer.alloc(pad);
   ps.put(Buffer.from(padBuff));
   ps._offset += pad;
 }
@@ -59,7 +59,7 @@ function writeStruct(ps: Put, tree, data) {
   if (tree.length !== data.length) {
     throw new Error('Invalid struct data');
   }
-  for (var i = 0; i < tree.length; ++i) {
+  for (let i = 0; i < tree.length; ++i) {
     write(ps, tree[i], data[i]);
   }
   return ps;
@@ -77,19 +77,19 @@ function write(ps: Put, ele, data) {
       // length of array body aligned at 4 byte boundary
       // (optional 4 bytes to align first body element on 8-byte boundary if element
       // body
-      var arrPut = put();
+      let arrPut = put();
       arrPut._offset = ps._offset;
-      var _offset = arrPut._offset;
+      let _offset = arrPut._offset;
       writeSimple(arrPut, 'u', 0); // array length placeholder
-      var lengthOffset = arrPut._offset - 4 - _offset;
+      let lengthOffset = arrPut._offset - 4 - _offset;
       // we need to alighn here because alignment is not included in array length
       if (['x', 't', 'd', '{', '('].indexOf(ele.child[0].type) !== -1)
         align(arrPut, 8);
-      var startOffset = arrPut._offset;
-      for (var i = 0; i < data.length; ++i)
+      let startOffset = arrPut._offset;
+      for (let i = 0; i < data.length; ++i)
         write(arrPut, ele.child[0], data[i]);
-      var arrBuff = arrPut.buffer();
-      var length = arrPut._offset - startOffset;
+      let arrBuff = arrPut.buffer();
+      let length = arrPut._offset - startOffset;
       // lengthOffset in the range 0 to 3 depending on number of align bytes padded _before_ arrayLength
       arrBuff.writeUInt32LE(length, lengthOffset);
       ps.put(arrBuff);
@@ -98,12 +98,12 @@ function write(ps: Put, ele, data) {
     case 'v':
       // TODO: allow serialisation of simple types as variants, e. g 123 -> ['u', 123], true -> ['b', 1], 'abc' -> ['s', 'abc']
       if (data.length !== 2) throw new Error('variant data should be [signature, data]');
-      var signatureEle = {
+      let signatureEle = {
         type: 'g',
         child: []
       };
       write(ps, signatureEle, data[0]);
-      var tree = parseSignature(data[0]);
+      let tree = parseSignature(data[0]);
       if (tree.length !== 1) throw new Error('variant data should contain exactly 1 item');
       write(ps, tree[0], data[1]);
       break;
@@ -112,7 +112,7 @@ function write(ps: Put, ele, data) {
   }
 }
 
-var stringTypes = ['g', 'o', 's'];
+let stringTypes = ['g', 'o', 's'];
 
 function writeSimple(ps: Put, type, data) {
   if (typeof data === 'undefined')
@@ -131,7 +131,7 @@ function writeSimple(ps: Put, type, data) {
     );
   }
 
-  var simpleMarshaller = MakeSimpleMarshaller(type);
+  let simpleMarshaller = MakeSimpleMarshaller(type);
   simpleMarshaller.marshall(ps, data);
   return ps;
 }
@@ -146,7 +146,7 @@ function writeSimple(ps: Put, type, data) {
  * invalid for the signature
  */
 export function MakeSimpleMarshaller(signature: string) {
-  var marshaller: any = {};
+  let marshaller: any = {};
   function checkValidString(data) {
     if (typeof data !== 'string') {
       throw new Error(`Data: ${data} was not of type string`);
@@ -162,8 +162,8 @@ export function MakeSimpleMarshaller(signature: string) {
       );
     }
 
-    var parenCount = 0;
-    for (var ii = 0; ii < data.length; ++ii) {
+    let parenCount = 0;
+    for (let ii = 0; ii < data.length; ++ii) {
       if (parenCount > 32) {
         throw new Error(
             `Maximum container type nesting exceeded in signature type:${data}`
@@ -357,13 +357,13 @@ export function MakeSimpleMarshaller(signature: string) {
   return marshaller;
 }
 
-var checkRange = function(minValue, maxValue, data) {
+let checkRange = function(minValue, maxValue, data) {
   if (data > maxValue || data < minValue) {
     throw new Error('Number outside range');
   }
 };
 
-var checkInteger = function(data) {
+let checkInteger = function(data) {
   if (typeof data !== 'number') {
     throw new Error(`Data: ${data} was not of type number`);
   }
@@ -372,14 +372,14 @@ var checkInteger = function(data) {
   }
 };
 
-var checkBoolean = function(data) {
+let checkBoolean = function(data) {
   if (!(typeof data === 'boolean' || data === 0 || data === 1))
     throw new Error(`Data: ${data} was not of type boolean`);
 };
 
 // This is essentially a tweaked version of 'fromValue' from Long.js with error checking.
 // This can take number or string of decimal characters or 'Long' instance (or Long-style object with props low,high,unsigned).
-var makeLong = function(val, signed) {
+let makeLong = function(val, signed) {
   if (val instanceof Long) return val;
   if (val instanceof Number) val = val.valueOf();
   if (typeof val === 'number') {
@@ -403,7 +403,7 @@ var makeLong = function(val, signed) {
     }
   }
   if (typeof val === 'string' || val instanceof String) {
-    var radix = 10;
+    let radix = 10;
     val = val.trim().toUpperCase(); // remove extra whitespace and make uppercase (for hex)
     if (val.substring(0, 2) === '0X') {
       radix = 16;
@@ -414,7 +414,7 @@ var makeLong = function(val, signed) {
       val = `-${val.substring(3)}`;
     }
     val = val.replace(/^0+(?=\d)/, ''); // dump leading zeroes
-    var data;
+    let data;
     try {
       data = Long.fromString(val, !signed, radix);
     } catch (e) {
@@ -440,7 +440,7 @@ var makeLong = function(val, signed) {
   }
 };
 
-var checkLong = function(data, signed) {
+let checkLong = function(data, signed) {
   if (!Long.isLong(data)) {
     data = makeLong(data, signed);
   }

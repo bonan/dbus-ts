@@ -19,11 +19,11 @@ export function messageParser(
     onMessage,
     opts
 ) {
-    var state = 0; // 0: header, 1: fields + body
-    var header, fieldsAndBody;
-    var fieldsLength, fieldsLengthPadded;
-    var fieldsAndBodyLength = 0;
-    var bodyLength = 0;
+    let state = 0; // 0: header, 1: fields + body
+    let header, fieldsAndBody;
+    let fieldsLength, fieldsLengthPadded;
+    let fieldsAndBodyLength = 0;
+    let bodyLength = 0;
     stream.on('readable', function() {
         while (1) {
             if (state === 0) {
@@ -40,19 +40,23 @@ export function messageParser(
                 if (!fieldsAndBody) break;
                 state = 0;
 
-                var messageBuffer = new DBusBuffer(fieldsAndBody, undefined, opts);
-                var unmarshalledHeader = messageBuffer.readArray(
+                let messageBuffer = new DBusBuffer(fieldsAndBody, undefined, opts);
+                let unmarshalledHeader = messageBuffer.readArray(
                     headerSignature[0].child[0],
                     fieldsLength
                 );
                 messageBuffer.align(3);
-                var headerName;
-                var message: Message = {};
+                let headerName;
+                let message: Message = {};
                 message.serial = header.readUInt32LE(8);
 
-                for (var i = 0; i < unmarshalledHeader.length; ++i) {
+                for (let i = 0; i < unmarshalledHeader.length; ++i) {
                     headerName = headerTypeName[unmarshalledHeader[i][0]];
-                    message[headerName] = unmarshalledHeader[i][1][1][0];
+                    if (typeof opts.simple !== 'undefined' && !opts.simple) {
+                        message[headerName] = unmarshalledHeader[i][1][1][0];
+                    } else {
+                        message[headerName] = unmarshalledHeader[i][1];
+                    }
                 }
 
                 message.type = header[1];
@@ -67,35 +71,17 @@ export function messageParser(
     });
 }
 
-// given buffer which contains entire message deserialise it
-// TODO: factor out common code
-export function unmarshall(buff, opts) {
-    var msgBuf = new DBusBuffer(buff, undefined, opts);
-    var headers = msgBuf.read('yyyyuua(yv)');
-    var message: Message = {};
-    for (var i = 0; i < headers[6].length; ++i) {
-        var headerName = headerTypeName[headers[6][i][0]];
-        message[headerName] = headers[6][i][1][1][0];
-    }
-    message.type = headers[1];
-    message.flags = headers[2];
-    message.serial = headers[5];
-    msgBuf.align(3);
-    message.body = msgBuf.read(message.signature);
-    return message;
-}
-
 export function marshallMessage(message) {
     if (!message.serial) throw new Error('Missing or invalid serial');
-    var flags = message.flags || 0;
-    var type = message.type || messageType.methodCall;
-    var bodyLength = 0;
-    var bodyBuff;
+    let flags = message.flags || 0;
+    let type = message.type || messageType.methodCall;
+    let bodyLength = 0;
+    let bodyBuff;
     if (message.signature && message.body) {
         bodyBuff = marshall(message.signature, message.body);
         bodyLength = bodyBuff.length;
     }
-    var header = [
+    let header = [
         endianness.le,
         type,
         flags,
@@ -103,10 +89,10 @@ export function marshallMessage(message) {
         bodyLength,
         message.serial
     ];
-    var headerBuff = marshall('yyyyuu', header);
-    var fields = [];
+    let headerBuff = marshall('yyyyuu', header);
+    let fields = [];
     headerTypeName.forEach(function(fieldName) {
-        var fieldVal = message[fieldName];
+        let fieldVal = message[fieldName];
         if (fieldVal) {
             fields.push([
                 headerTypeId[fieldName],
@@ -114,11 +100,11 @@ export function marshallMessage(message) {
             ]);
         }
     });
-    var fieldsBuff = marshall('a(yv)', [fields], 12);
-    var headerLenAligned =
+    let fieldsBuff = marshall('a(yv)', [fields], 12);
+    let headerLenAligned =
         ((headerBuff.length + fieldsBuff.length + 7) >> 3) << 3;
-    var messageLen = headerLenAligned + bodyLength;
-    var messageBuff = Buffer.alloc(messageLen);
+    let messageLen = headerLenAligned + bodyLength;
+    let messageBuff = Buffer.alloc(messageLen);
     headerBuff.copy(messageBuff);
     fieldsBuff.copy(messageBuff, headerBuff.length);
     if (bodyLength > 0) bodyBuff.copy(messageBuff, headerLenAligned);

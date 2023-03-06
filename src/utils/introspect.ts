@@ -2,6 +2,7 @@
 import {Parser} from 'xml2js';
 import {DBusInterface} from "../dbusInterface";
 import {DBusObject} from "../dbusObject";
+import {readFile} from "fs/promises";
 
 export async function introspectBus<T>(obj: DBusObject): Promise<[string, {[name: string]:DBusInterface&T}, string[]]> {
   const xml = await obj?.service?.bus?.invoke({
@@ -46,4 +47,25 @@ export async function processXML<T>(xml, obj: DBusObject): Promise<[string, {[na
     proxy[ifaceName] = <DBusInterface&T>new DBusInterface(obj, iface);
   }
   return [obj.name, proxy, nodes];
+}
+
+export async function processFile(file: string): Promise<{[name: string]: DBusInterface}> {
+  const proxy: {[name: string]: DBusInterface} = {};
+
+  const parser = new Parser();
+  let result = await parser.parseStringPromise(await readFile(file));
+  if (!result.node) throw new Error('No root XML node');
+  result = result.node;
+  if (!result.interface) {
+    throw new Error('No such interface found');
+  }
+  let ifaceName;
+  const ifaces = result['interface'];
+
+  for (let iface of ifaces) {
+    ifaceName = iface['$'].name;
+    proxy[ifaceName] = <DBusInterface>new DBusInterface(null, iface);
+  }
+
+  return proxy;
 }

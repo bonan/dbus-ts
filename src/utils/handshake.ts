@@ -6,7 +6,7 @@ import {readLine} from "./readline";
 import * as constants from './constants';
 
 function sha1(input) {
-    var shasum = createHash('sha1');
+    let shasum = createHash('sha1');
     shasum.update(input);
     return shasum.digest('hex');
 }
@@ -21,7 +21,7 @@ async function getCookie(context: string, id: string): Promise<any> {
     // > There is a default context, "org_freedesktop_general" that's used by servers that do not specify otherwise.
     if (context.length === 0) context = 'org_freedesktop_general';
 
-    var filename = pathJoin(dirname, context);
+    let filename = pathJoin(dirname, context);
     const s = await stat(dirname);
     // check it's not writable by others and readable by user
     if (s.mode & 0o22) {
@@ -44,12 +44,15 @@ function hexlify(input) {
     return Buffer.from(input.toString(), 'ascii').toString('hex');
 }
 
-export interface AuthOpts {
+export interface Opts {
     authMethods?: string[]
     uid?: number
+
+    // Set false to enable more verbose objects
+    simple?: boolean
 }
 
-export async function clientHandshake(stream, opts?: AuthOpts): Promise<string> {
+export async function clientHandshake(stream, opts?: Opts): Promise<string> {
     let authMethods = opts?.authMethods || constants.defaultAuthMethods;
     stream.write('\0')
 

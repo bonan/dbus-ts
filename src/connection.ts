@@ -5,7 +5,7 @@ import {Readable, Writable} from "stream";
 import * as net from 'net';
 
 import {marshallMessage, messageParser} from './utils/messageParser';
-import {AuthOpts, clientHandshake} from './utils/handshake';
+import {Opts, clientHandshake} from './utils/handshake';
 import {MessageBus} from './messageBus';
 import {Message} from './message';
 
@@ -34,8 +34,8 @@ function createStream(opts: ConnectOpts): Readable&Writable {
     let busAddress = opts.busAddress || process.env.DBUS_SESSION_BUS_ADDRESS;
     if (!busAddress) throw new Error('unknown bus address');
 
-    var addresses = busAddress.split(';');
-    for (var i = 0; i < addresses.length; ++i) {
+    let addresses = busAddress.split(';');
+    for (let i = 0; i < addresses.length; ++i) {
         let address = addresses[i];
         let familyParams = address.split(':');
         let family = familyParams[0];
@@ -113,7 +113,7 @@ export class Connection extends EventEmitter {
 
     }
 
-    async init(opts?: AuthOpts) {
+    async init(opts?: ConnectOpts&Opts) {
         if (this.guid) return;
         this.guid = await clientHandshake(this.stream, opts);
         this.emit('connect');
@@ -134,26 +134,27 @@ export class Connection extends EventEmitter {
 
 }
 
-export async function createConnection(opts?: ConnectOpts&AuthOpts) {
+export async function createConnection(opts?: ConnectOpts&Opts) {
     if (!opts) opts = {};
     let conn = new Connection(createStream(opts));
     await conn.init(opts);
     return conn;
 }
 
-export async function createClient(opts?: ConnectOpts&AuthOpts) {
+export async function createClient<K extends {[name: string]: any} = {}>(opts?: ConnectOpts&Opts) {
     let connection = await createConnection(opts || {});
-    return new MessageBus(connection, opts || {});
+    return new MessageBus<K>(connection, opts || {});
 }
 
-export async function systemBus() {
-    return await createClient({
+export async function systemBus<K extends {[name: string]: any} = {}>(opts?: Opts) {
+    return await createClient<K>({
+        ...opts,
         busAddress:
             process.env.DBUS_SYSTEM_BUS_ADDRESS ||
             'unix:path=/var/run/dbus/system_bus_socket'
     });
 }
 
-export async function sessionBus(opts?: ConnectOpts&AuthOpts) {
-    return await createClient(opts);
+export async function sessionBus<K extends {[name: string]: any} = {}>(opts?: ConnectOpts&Opts) {
+    return await createClient<K>(opts);
 }

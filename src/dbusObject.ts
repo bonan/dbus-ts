@@ -1,10 +1,10 @@
 import {DBusInterface} from "./dbusInterface";
-import {Interfaces} from "./interface";
+import {Interfaces} from "@dbus-types/dbus";
 import {DBusService} from "./dbusService";
 import {introspectBus} from "./utils/introspect";
 
 
-export class DBusObject {
+export class DBusObject<K extends {[name: string]: any} = {}> {
 
     private _proxy: { [inf: string]: DBusInterface };
     private _nodes: string[];
@@ -17,7 +17,7 @@ export class DBusObject {
     }
 
     as<T extends keyof Interfaces>(name: T): DBusInterface & Interfaces[T]
-    as<T>(name: string): DBusInterface & T
+    as<T extends keyof K>(name: T): DBusInterface & K[T]
     as(name: string): DBusInterface
     as(name: string): DBusInterface {
         if (typeof this._proxy[name] === 'undefined') {

@@ -1,7 +1,5 @@
 import {Message} from "./message";
 import {DBusObject} from "./dbusObject";
-import {MessageBus} from "./messageBus";
-import {nativeType} from "./utils/signature";
 import {isPromise} from "util/types";
 
 export class DBusInterface
@@ -29,11 +27,11 @@ export class DBusInterface
             // add method
             this.$createMethod(methodName, signature, args);
         }
-        for (var p = 0; iface.property && p < iface.property.length; ++p) {
+        for (let p = 0; iface.property && p < iface.property.length; ++p) {
             let property = iface.property[p];
             this.$createProp(property['$'].name, property['$'].type, property['$'].access)
         }
-        for (var s = 0; iface.signal && s < iface.signal.length; ++s) {
+        for (let s = 0; iface.signal && s < iface.signal.length; ++s) {
             let signal = iface.signal[s];
             let args = [];
             for (let argx of signal.arg || []) {
@@ -65,8 +63,8 @@ export class DBusInterface
         let signalFullName = bus.mangle(this.$parent.name, this.$name, signame);
         if (!bus.signals.listeners(signalFullName).length) {
             // This is the first time, so call addMatch
-            var match = getMatchRule(this.$parent.name, this.$name, signame);
-            await bus.dbus().then(d => (<DBusInterface&{AddMatch:(m:string)=>Promise<[]>}>d).AddMatch(match))
+            let match = getMatchRule(this.$parent.name, this.$name, signame);
+            await bus.dbus().then(d => d.AddMatch(match))
             bus.signals.on(signalFullName, this.$getSigHandler(callback));
         } else {
             bus.signals.on(signalFullName, this.$getSigHandler(callback));
@@ -151,72 +149,6 @@ export class DBusInterface
 
     private $createSignal(mName, args) {
         this.$signals[mName] = args
-    }
-
-    $createDefinition(): string {
-
-        const resv = (v: string) => {
-            switch (v) {
-                case 'class': return 'cls'
-                default: return v
-            }
-        }
-
-        /*const nativeType = (v) => {
-            const sig = parseSignature(v);
-            console.log(v, parseSignature(v));
-            return `any(${v})`
-        }*/
-
-        const parts = this.$name.split('.')
-        const ifName = parts[parts.length-1];
-        const ind = '  '.repeat(parts.length-1);
-
-        //let out = `${ind}export const ${ifName} = "${this.$name}";\n`
-        let out = `${ind}export interface ${ifName} \{\n`;
-
-        for (let k in this.$signals) {
-            if (!this.$signals.hasOwnProperty(k)) continue;
-            const s = this.$signals[k];
-            const sig = [];
-            let i = 0;
-            for (let v of s) {
-                sig.push(`${resv(v.name||'v'+(i++))}: ${nativeType(v.type)}/*${v.type}*/`)
-            }
-            out += `${ind}  on(ev: "${k}", cb: (${sig.join(', ')}) => void)\n`;
-
-        }
-        for (let k in this.$properties) {
-            if (!this.$properties.hasOwnProperty(k)) continue;
-            const s = this.$properties[k];
-            if (s.access == 'read' || s.access == 'readwrite') {
-                out += `${ind}  get ${k}(): Promise<${nativeType(s.type)}> /*${s.type}*/\n`;
-            }
-            if (s.access == 'write' || s.access == 'readwrite') {
-                out += `${ind}  set ${k}(v: ${nativeType(s.type, true)} /* Don't use: */|Promise<${nativeType(s.type)}>)\n`;
-            }
-        }
-        for (let k in this.$methodArgs) {
-            if (!this.$methodArgs.hasOwnProperty(k)) continue;
-            const s = this.$methodArgs[k];
-            const sig = [];
-            const sigRet = [];
-            const sigRetNames = [];
-            let i = 0;
-            for (let v of s) {
-                if (v.direction === 'in') {
-                    sig.push(`${resv(v.name||'v'+(i++))}: ${nativeType(v.type, true)}/*${v.type}*/`)
-                } else {
-                    sigRet.push(`${v.name ? '/*' + v.name + '*/' : ''}${nativeType(v.type)}/*${v.type}*/`)
-                    //sigRetNames.push(v.name);
-                }
-            }
-            out += `${ind}  ${k}(${sig.join(', ')}): Promise<[${sigRet.join(', ')}]>\n`;
-
-        }
-        out += `${ind}}\n`
-
-        return out;
     }
 
 }

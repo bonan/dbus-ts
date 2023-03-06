@@ -1,14 +1,15 @@
 {
   "name": "dbus-ts",
   "version": "0.0.1",
-  "description": "",
+  "description": "Re-implementation of dbus-native in typescript using promises",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc",
-    "generate": "test -f src/interface.ts || echo 'export type Interfaces={}' > src/interface.ts && tsc && node bin/generate_interface.js && npm run build"
+    "build": "tsc"
   },
   "keywords": [
-    "dbus", "dbus-native", "promises", "typescript"
+    "dbus",
+    "promises",
+    "typescript"
   ],
   "author": {
     "name": "bonan",
@@ -23,12 +24,16 @@
   "contributors": [],
   "license": "MIT",
   "dependencies": {
+    "@dbus-types/dbus": "^0.0.4",
+    "@dbus-types/networkmanager": "^0.0.5",
+    "@dbus-types/notifications": "^0.0.5",
+    "@dbus-types/systemd": "^0.0.5",
     "@homebridge/long": "^5.2.1",
     "@homebridge/put": "^0.0.8",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@types/node": "^18.14.5",
+    "@types/node": "^16",
     "typescript": "^4.9.5"
   }
 }

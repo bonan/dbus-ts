@@ -4,11 +4,12 @@ import {DBusObject} from "./dbusObject";
 import {Message} from "./message";
 import {DBusService} from "./dbusService";
 import {messageType} from "./utils/constants";
-import {Interfaces} from "./interface";
+import {Interfaces} from "@dbus-types/dbus";
 import {Connection} from "./connection";
+import {DBusInterface} from "./dbusInterface";
 
 
-export class MessageBus {
+export class MessageBus<K extends {[name: string]: any} = {}> {
 
     public serial: number = 1;
     private cookies: { [serial: number]: [(res?: any)=>void, (err?: any)=>void] } = {}
@@ -16,7 +17,7 @@ export class MessageBus {
     public signals = new EventEmitter()
     public exportedObjects: any = {};
     private name: string;
-    private _dbus: DBusObject
+    private _dbus: DBusObject<K>
 
     constructor(public connection: Connection, private opts: any = {}) {
         this.connection.on('message', (msg) => this.onMessage(msg))
@@ -33,7 +34,7 @@ export class MessageBus {
         if (!this._dbus) {
             this._dbus = await this.getObject('org.freedesktop.DBus', '/org/freedesktop/DBus');
         }
-        return this._dbus.as<{}>('org.freedesktop.DBus');
+        return this._dbus.as('org.freedesktop.DBus');
     }
 
     invoke(msg: Message): Promise<any> {
@@ -163,12 +164,12 @@ export class MessageBus {
             if (stdDbusIfaces(msg, self)) return;
 
             // exported interfaces handlers
-            var obj, iface, impl;
+            let obj, iface, impl;
             if ((obj = self.exportedObjects[msg.path])) {
                 if ((iface = obj[msg['interface']])) {
                     // now we are ready to serve msg.member
                     impl = iface[1];
-                    var func = impl[msg.member];
+                    let func = impl[msg.member];
                     if (!func) {
                         self.sendError(
                             msg,
@@ -178,7 +179,7 @@ export class MessageBus {
                         return;
                     }
                     // TODO safety check here
-                    var resultSignature = iface[0].methods[msg.member][1];
+                    let resultSignature = iface[0].methods[msg.member][1];
                     invoke(impl, func, resultSignature);
                     return;
                 } else {
@@ -216,14 +217,14 @@ export class MessageBus {
         entry[iface.name] = [iface, obj];
         // monkey-patch obj.emit()
         if (typeof obj.emit === 'function') {
-            var oldEmit = obj.emit;
+            let oldEmit = obj.emit;
             obj.emit = function() {
-                var args = Array.prototype.slice.apply(arguments);
-                var signalName = args[0];
+                let args = Array.prototype.slice.apply(arguments);
+                let signalName = args[0];
                 if (!signalName) throw new Error('Trying to emit undefined signal');
 
                 //send signal to bus
-                var signal;
+                let signal;
                 if (iface.signals && iface.signals[signalName]) {
                     signal = iface.signals[signalName];
                     let signalMsg: any = {
@@ -249,14 +250,17 @@ export class MessageBus {
     }
 
     getService(name: string) {
-        return new DBusService(name, this);
+        return new DBusService<K>(name, this);
     }
 
-    async getObject(service, name): Promise<DBusObject> {
+    async getObject(service, name): Promise<DBusObject<K>> {
         return await this.getService(service).getObject(name);
     };
 
-    async getInterface<T extends keyof Interfaces>(service: string, name: string, inf: T) {
+    getInterface<T extends keyof Interfaces>(service: string, name: string, inf: T): Promise<DBusInterface & Interfaces[T]>
+    getInterface<T extends keyof K>(service: string, name: string, inf: T): Promise<DBusInterface & K[T]>
+    getInterface(service: string, name: string, inf: string): Promise<DBusInterface>
+    async getInterface(service: string, name: string, inf: string) {
         return await this.getService(service).getObject(name).then(s => s.as(inf));
     };
 
