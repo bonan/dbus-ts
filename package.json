@@ -1,6 +1,6 @@
 {
   "name": "dbus-ts",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Re-implementation of dbus-native in typescript using promises",
   "main": "lib/index.js",
   "scripts": {

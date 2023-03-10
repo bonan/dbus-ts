@@ -83,14 +83,14 @@ export class Connection extends EventEmitter {
 
         stream.on('error', (err) => {
             // forward network and stream errors
-            console.error('dbus socket error', err);
             this.emit('error', err);
         });
 
         stream.on('end', () => {
-            console.warn('dbus socket ended');
             this.emit('end');
-            this.message = () => console.warn("Didn't write bytes to closed stream");
+            this.message = () => {
+                throw new Error("dbus socket closed");
+            }
         });
 
         this.message = (msg) => this._messages.push(msg);

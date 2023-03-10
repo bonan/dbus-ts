@@ -183,8 +183,8 @@ export class MessageBus<K extends {[name: string]: any} = {}> {
                     invoke(impl, func, resultSignature);
                     return;
                 } else {
-                    console.error(`Interface ${msg['interface']} is not supported`);
                     // TODO: respond with standard dbus error
+                    this.connection.emit('message_error', `Interface ${msg['interface']} is not supported`, msg);
                 }
             }
             // setMethodCall handlers
