@@ -35,7 +35,7 @@ async function run() {
     await notifications.on('NotificationClosed', (id, reason) => console.log("NotificationClosed", id, reason));
 
     const [id] = await notifications.Notify('dbus-ts', 0, '', `${numRunningUnits} units!`, `${numRunningUnits} units are currently running`,
-        ['Yes', 'No', 'Maybe'], {},  30);
+        ['yes', 'Yes', 'no', 'No', 'maybe', 'Maybe'], {},  30000);
 
     console.log("Notification sent successfully with id " + id)
 
